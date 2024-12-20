@@ -64,6 +64,13 @@ clusterctl generate cluster capi-quickstart \
 ## OpenStack version
 
 We currently require at least OpenStack Pike.
+There is some flexibility in the microversion requirements for Nova.
+The minimum requirement is 2.38.
+However, certain features require a higher version.
+Specifically, tagging raises the requirement to 2.53, and multiattach volumes to 2.60.
+
+Note that CAPO will not be able to determine what the default volume type is or whether it is multiattach capable.
+You need to be explicit in this case and specify what volume type should be used.
 
 ## Operating system image
 
@@ -193,7 +200,7 @@ Depending on the CNI that will be deployed on the cluster, you may need to add s
    namespace: <cluster-namespace>
  spec:
     ...
-    managedSecurityGroups: 
+    managedSecurityGroups:
       allNodesSecurityGroupRules:
       - remoteManagedGroups:
         - controlplane
@@ -246,7 +253,7 @@ You can use a pre-existing router instead of creating a new one. When deleting a
    namespace: <cluster-namespace>
  spec:
    ...
-   router: 
+   router:
       id: <Router id>
  ```
 
@@ -269,6 +276,8 @@ associated to the first controller node and the other controller nodes have no f
  the controller node has the floating IP status down CAPO will NOT auto assign the floating IP address
 to any other controller node. So we recommend to only set one controller node when floating IP is needed,
 or please consider using load balancer instead, see [issue #1265](https://github.com/kubernetes-sigs/cluster-api-provider-openstack/issues/1265) for further information.
+
+Note: `spec.disableExternalNetwork` must be unset or set to `false` to allow the API server to have a floating IP.
 
 ### Disabling the API server floating IP
 
@@ -716,6 +725,8 @@ spec:
     ...
     floatingIP: <Floating IP address>
 ```
+
+Note: A floating IP can only be added if `OpenStackCluster.Spec.DisableExternalNetwork` is not set or set to `false`.
 
 If `managedSecurityGroups` is set to a non-nil value (e.g. `{}`), security group rule opening 22/tcp is added to security groups for bastion, controller, and worker nodes respectively. Otherwise, you have to add `securityGroups` to the `bastion` in `OpenStackCluster` spec and `OpenStackMachineTemplate` spec template respectively.
 
