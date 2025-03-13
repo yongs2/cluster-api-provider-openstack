@@ -77,6 +77,7 @@ type OpenStackServerReconciler struct {
 
 // +kubebuilder:rbac:groups=infrastructure.cluster.x-k8s.io,resources=openstackservers,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=infrastructure.cluster.x-k8s.io,resources=openstackservers/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=openstack.k-orc.cloud,resources=images,verbs=get;list;watch
 
 func (r *OpenStackServerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (result ctrl.Result, reterr error) {
 	log := ctrl.LoggerFrom(ctx)
@@ -418,11 +419,7 @@ func getOrCreateServerPorts(openStackServer *infrav1alpha1.OpenStackServer, netw
 	}
 	desiredPorts := resolved.Ports
 
-	if len(desiredPorts) == len(resources.Ports) {
-		return nil
-	}
-
-	if err := networkingService.CreatePorts(openStackServer, desiredPorts, resources); err != nil {
+	if err := networkingService.EnsurePorts(openStackServer, desiredPorts, resources); err != nil {
 		return fmt.Errorf("creating ports: %w", err)
 	}
 
@@ -602,6 +599,7 @@ func (r *OpenStackServerReconciler) getOrCreateIPAddressClaimForFloatingAddress(
 				},
 			},
 			Finalizers: []string{infrav1.IPClaimMachineFinalizer},
+			Labels:     map[string]string{},
 		},
 		Spec: ipamv1.IPAddressClaimSpec{
 			PoolRef: *poolRef,
